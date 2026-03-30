@@ -11,8 +11,9 @@ import LineGraph from './components/LineGraph'
 import AIInsights from './components/AIInsights'
 import Transactions from './components/Transactions'
 import AddExpense from './components/AddExpense'
+import SpendingAnalysis from './components/SpendingAnalysis'
 
-function Dashboard() {
+function AppShell({ children }) {
   const [showExpense, setShowExpense] = useState(false)
 
   return (
@@ -21,20 +22,10 @@ function Dashboard() {
       <div className="main-area">
         <Header />
         <div className="content-area">
-          <div className="dashboard-v2">
-            <HeroCards />
-            <StatsCards />
-            <div className="charts-row">
-              <PieChart />
-              <LineGraph />
-            </div>
-            <AIInsights />
-            <Transactions />
-          </div>
+          {children}
         </div>
       </div>
 
-      {/* FAB: Add Expense */}
       <button
         className="fab-add-expense"
         onClick={() => setShowExpense(true)}
@@ -46,17 +37,36 @@ function Dashboard() {
         </svg>
       </button>
 
-      {/* Add Expense Modal */}
       <AddExpense isOpen={showExpense} onClose={() => setShowExpense(false)} />
     </div>
   )
+}
+
+function DashboardPage() {
+  return (
+    <div className="dashboard-v2">
+      <HeroCards />
+      <StatsCards />
+      <div className="charts-row">
+        <PieChart />
+        <LineGraph />
+      </div>
+      <AIInsights />
+      <Transactions />
+    </div>
+  )
+}
+
+function AnalyticsPage() {
+  return <SpendingAnalysis />
 }
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<AuthPage />} />
-      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/dashboard" element={<AppShell><DashboardPage /></AppShell>} />
+      <Route path="/analytics" element={<AppShell><AnalyticsPage /></AppShell>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
