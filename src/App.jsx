@@ -3,10 +3,11 @@ import './App.css'
 import AuthPage from './components/AuthPage'
 import Sidebar from './components/Sidebar'
 import Header from './components/Header'
-import BalanceCard from './components/BalanceCard'
-import Mascot from './components/Mascot'
+import HeroCards from './components/HeroCards'
 import StatsCards from './components/StatsCards'
-import ChartWidget from './components/ChartWidget'
+import PieChart from './components/PieChart'
+import LineGraph from './components/LineGraph'
+import AIInsights from './components/AIInsights'
 import Transactions from './components/Transactions'
 
 function Dashboard() {
@@ -16,11 +17,23 @@ function Dashboard() {
       <div className="main-area">
         <Header />
         <div className="content-area">
-          <div className="dashboard-grid">
-            <BalanceCard />
-            <Mascot />
+          <div className="dashboard-v2">
+            {/* Hero Cards: Total Balance, Monthly Expense, Savings */}
+            <HeroCards />
+
+            {/* Small Stats Row */}
             <StatsCards />
-            <ChartWidget />
+
+            {/* Charts: Pie + Line */}
+            <div className="charts-row">
+              <PieChart />
+              <LineGraph />
+            </div>
+
+            {/* AI Insights + Quick Stats */}
+            <AIInsights />
+
+            {/* Recent Activity */}
             <Transactions />
           </div>
         </div>
