@@ -1,10 +1,14 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import './Auth.css'
 
-export default function AuthPage() {
-    const [isLogin, setIsLogin] = useState(true)
+export default function AuthPage({ defaultMode = 'login' }) {
+    const [isLogin, setIsLogin] = useState(defaultMode === 'login')
+
+    useEffect(() => {
+        setIsLogin(defaultMode === 'login')
+    }, [defaultMode])
     const [showPassword, setShowPassword] = useState(false)
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
@@ -63,7 +67,7 @@ export default function AuthPage() {
 
                 if (error) {
                     if (error.message.includes('already registered')) {
-                        throw new Error('An account with this email already exists.')
+                        throw new Error('Already registered using the mail id')
                     }
                     throw error
                 }
@@ -89,7 +93,7 @@ export default function AuthPage() {
     }
 
     const switchMode = (mode) => {
-        setIsLogin(mode)
+        navigate(mode ? '/login' : '/signup')
         setErrorMsg('')
         setSuccessMsg('')
     }

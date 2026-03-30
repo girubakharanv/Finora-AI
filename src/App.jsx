@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
 import './App.css'
+import LandingPage from './components/LandingPage'
 import AuthPage from './components/AuthPage'
 import Sidebar from './components/Sidebar'
 import Header from './components/Header'
@@ -104,7 +105,9 @@ function App() {
 
   return (
     <Routes>
-      <Route path="/" element={session ? <Navigate to="/dashboard" replace /> : <AuthPage />} />
+      <Route path="/" element={<LandingPage session={session} />} />
+      <Route path="/login" element={session ? <Navigate to="/dashboard" replace /> : <AuthPage defaultMode="login" />} />
+      <Route path="/signup" element={session ? <Navigate to="/dashboard" replace /> : <AuthPage defaultMode="signup" />} />
       <Route path="/dashboard" element={<ProtectedRoute session={session}><AppShell><DashboardPage /></AppShell></ProtectedRoute>} />
       <Route path="/analytics" element={<ProtectedRoute session={session}><AppShell><AnalyticsPage /></AppShell></ProtectedRoute>} />
       <Route path="/savings" element={<ProtectedRoute session={session}><AppShell><SavingsQuest /></AppShell></ProtectedRoute>} />
