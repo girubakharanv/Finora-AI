@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { supabase } from './supabaseClient'
 import './App.css'
 import AuthPage from './components/AuthPage'
 import Sidebar from './components/Sidebar'
@@ -67,14 +68,47 @@ function AnalyticsPage() {
   return <SpendingAnalysis />
 }
 
+function ProtectedRoute({ session, children }) {
+  if (!session) {
+    return <Navigate to="/" replace />
+  }
+  return children
+}
+
 function App() {
+  const [session, setSession] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      setLoading(false)
+    })
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  if (loading) {
+    return (
+      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-main)' }}>
+        <p style={{ fontWeight: 600, color: 'var(--primary)' }}>Loading securely...</p>
+      </div>
+    )
+  }
+
   return (
     <Routes>
-      <Route path="/" element={<AuthPage />} />
-      <Route path="/dashboard" element={<AppShell><DashboardPage /></AppShell>} />
-      <Route path="/analytics" element={<AppShell><AnalyticsPage /></AppShell>} />
-      <Route path="/savings" element={<AppShell><SavingsQuest /></AppShell>} />
-      <Route path="/forecast" element={<AppShell><AIForecast /></AppShell>} />
+      <Route path="/" element={session ? <Navigate to="/dashboard" replace /> : <AuthPage />} />
+      <Route path="/dashboard" element={<ProtectedRoute session={session}><AppShell><DashboardPage /></AppShell></ProtectedRoute>} />
+      <Route path="/analytics" element={<ProtectedRoute session={session}><AppShell><AnalyticsPage /></AppShell></ProtectedRoute>} />
+      <Route path="/savings" element={<ProtectedRoute session={session}><AppShell><SavingsQuest /></AppShell></ProtectedRoute>} />
+      <Route path="/forecast" element={<ProtectedRoute session={session}><AppShell><AIForecast /></AppShell></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

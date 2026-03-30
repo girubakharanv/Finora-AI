@@ -1,10 +1,31 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { supabase } from '../supabaseClient'
 
 export default function Header() {
+    const [name, setName] = useState('There')
+    const navigate = useNavigate()
+
+    useEffect(() => {
+        const fetchUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user && user.user_metadata?.username) {
+                const firstName = user.user_metadata.username.split(' ')[0]
+                setName(firstName)
+            }
+        }
+        fetchUser()
+    }, [])
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut()
+        navigate('/')
+    }
+
     return (
         <header className="header">
             <div className="header-left">
-                <h1>Good Morning, Nidhi! 👋</h1>
+                <h1>Good Morning, {name}! 👋</h1>
                 <p><span>✨</span>Here's your financial overview for today</p>
             </div>
 
@@ -25,9 +46,11 @@ export default function Header() {
                     <span className="notif-dot"></span>
                 </button>
 
-                <button className="header-icon-btn" title="Messages">
+                <button className="header-icon-btn" title="Logout" onClick={handleLogout} style={{ color: '#F43F5E' }}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
                     </svg>
                 </button>
             </div>

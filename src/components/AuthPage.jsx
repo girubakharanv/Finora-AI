@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { supabase } from '../supabaseClient'
 import './Auth.css'
 
 export default function AuthPage() {
@@ -8,11 +9,89 @@ export default function AuthPage() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [name, setName] = useState('')
-    const navigate = useNavigate()
 
-    const handleSubmit = (e) => {
+    // UI States
+    const [loading, setLoading] = useState(false)
+    const [errorMsg, setErrorMsg] = useState('')
+    const [successMsg, setSuccessMsg] = useState('')
+
+    const validateEmail = (e) => e.includes('@') && e.includes('.')
+
+    const getPasswordStrength = () => {
+        if (!password) return null
+        if (password.length < 6) return { text: 'Weak (min 6 chars)', color: '#FF5F96' }
+        if (password.length >= 6 && password.length < 9) return { text: 'Medium', color: '#FFB74D' }
+        return { text: 'Strong', color: '#56C596' }
+    }
+
+    const passStrength = getPasswordStrength()
+
+    const isFormValid = () => {
+        if (!validateEmail(email)) return false
+        if (password.length < 6) return false
+        if (!isLogin && !name.trim()) return false
+        return true
+    }
+
+    const handleSubmit = async (e) => {
         e.preventDefault()
-        navigate('/dashboard')
+        setErrorMsg('')
+        setSuccessMsg('')
+
+        if (!validateEmail(email)) return setErrorMsg('Please enter a valid email addressing containing "@" and domain.')
+        if (password.length < 6) return setErrorMsg('Password must be at least 6 characters.')
+        if (!isLogin && !name.trim()) return setErrorMsg('Please enter your full name.')
+
+        setLoading(true)
+
+        try {
+            if (isLogin) {
+                const { error } = await supabase.auth.signInWithPassword({ email, password })
+                if (error) {
+                    if (error.message.includes('Invalid login credentials')) {
+                        throw new Error('Incorrect email or password.')
+                    }
+                    throw error
+                }
+                // App.jsx will automatically redirect upon session change
+            } else {
+                const { data, error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: { data: { username: name } }
+                })
+
+                if (error) {
+                    if (error.message.includes('already registered')) {
+                        throw new Error('An account with this email already exists.')
+                    }
+                    throw error
+                }
+
+                if (data?.user) {
+                    // Try to insert into profiles. Assumes RLS allows this, or it's done via DB trigger.
+                    const { error: profileError } = await supabase
+                        .from('profiles')
+                        .insert([{ id: data.user.id, username: name, email }])
+
+                    if (profileError) {
+                        console.error('Profile insertion error:', profileError.message)
+                        // We don't throw here to ensure the user still knows they signed up successfully
+                    }
+                }
+                setSuccessMsg('Account created successfully!')
+            }
+        } catch (error) {
+            setErrorMsg(error.message)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const switchMode = (mode) => {
+        setIsLogin(mode)
+        setErrorMsg('')
+        setSuccessMsg('')
     }
 
     return (
@@ -38,15 +117,9 @@ export default function AuthPage() {
                     </div>
 
                     <div className="auth-features">
-                        <div className="auth-feature-chip">
-                            <span>🤖</span> AI Insights
-                        </div>
-                        <div className="auth-feature-chip">
-                            <span>📈</span> Smart Tracking
-                        </div>
-                        <div className="auth-feature-chip">
-                            <span>🔒</span> Secure
-                        </div>
+                        <div className="auth-feature-chip"><span>🤖</span> AI Insights</div>
+                        <div className="auth-feature-chip"><span>📈</span> Smart Tracking</div>
+                        <div className="auth-feature-chip"><span>🔒</span> Secure Database</div>
                     </div>
                 </div>
             </div>
@@ -64,18 +137,16 @@ export default function AuthPage() {
                         <p>{isLogin ? 'Sign in to continue your financial journey' : 'Create your account and start saving smartly'}</p>
                     </div>
 
+                    {/* Alerts */}
+                    {errorMsg && <div className="auth-alert error">{errorMsg}</div>}
+                    {successMsg && <div className="auth-alert success">{successMsg}</div>}
+
                     {/* Login / Signup Tabs */}
                     <div className="auth-tabs">
-                        <button
-                            className={`auth-tab ${isLogin ? 'active' : ''}`}
-                            onClick={() => setIsLogin(true)}
-                        >
+                        <button className={`auth-tab ${isLogin ? 'active' : ''}`} onClick={() => switchMode(true)}>
                             Login
                         </button>
-                        <button
-                            className={`auth-tab ${!isLogin ? 'active' : ''}`}
-                            onClick={() => setIsLogin(false)}
-                        >
+                        <button className={`auth-tab ${!isLogin ? 'active' : ''}`} onClick={() => switchMode(false)}>
                             Sign Up
                         </button>
                     </div>
@@ -92,6 +163,7 @@ export default function AuthPage() {
                                         placeholder="John Doe"
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
+                                        disabled={loading}
                                     />
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -104,13 +176,14 @@ export default function AuthPage() {
                         {/* Email */}
                         <div className="form-group">
                             <label htmlFor="auth-email">Email Address</label>
-                            <div className="form-input-wrapper">
+                            <div className={`form-input-wrapper ${email && !validateEmail(email) ? 'invalid' : ''}`}>
                                 <input
                                     id="auth-email"
                                     type="email"
                                     placeholder="you@example.com"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
+                                    disabled={loading}
                                 />
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
@@ -129,6 +202,7 @@ export default function AuthPage() {
                                     placeholder="••••••••"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
+                                    disabled={loading}
                                 />
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
@@ -138,7 +212,6 @@ export default function AuthPage() {
                                     type="button"
                                     className="password-toggle"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                                 >
                                     {showPassword ? (
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -153,60 +226,45 @@ export default function AuthPage() {
                                     )}
                                 </button>
                             </div>
+                            {password && (
+                                <div className="password-strength" style={{ color: passStrength.color }}>
+                                    {passStrength.text}
+                                </div>
+                            )}
                         </div>
 
                         {/* Extras (login only) */}
                         {isLogin && (
                             <div className="form-extras">
                                 <label className="remember-me">
-                                    <input type="checkbox" />
+                                    <input type="checkbox" disabled={loading} />
                                     Remember me
                                 </label>
-                                <a href="#" className="forgot-link" onClick={(e) => e.preventDefault()}>
-                                    Forgot Password?
-                                </a>
+                                <a href="#" className="forgot-link" onClick={(e) => e.preventDefault()}>Forgot Password?</a>
                             </div>
                         )}
 
                         {/* Submit */}
-                        <button type="submit" className="auth-submit-btn">
-                            {isLogin ? 'Sign In' : 'Create Account'}
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <line x1="5" y1="12" x2="19" y2="12" />
-                                <polyline points="12 5 19 12 12 19" />
-                            </svg>
+                        <button type="submit" className="auth-submit-btn" disabled={!isFormValid() || loading}>
+                            {loading ? (
+                                <span className="auth-spinner"></span>
+                            ) : (
+                                <>
+                                    {isLogin ? 'Sign In' : 'Create Account'}
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <line x1="5" y1="12" x2="19" y2="12" />
+                                        <polyline points="12 5 19 12 12 19" />
+                                    </svg>
+                                </>
+                            )}
                         </button>
-
-                        {/* Divider */}
-                        <div className="auth-divider">
-                            <span>or continue with</span>
-                        </div>
-
-                        {/* Social Login */}
-                        <div className="social-btns">
-                            <button type="button" className="social-btn">
-                                <svg viewBox="0 0 24 24">
-                                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
-                                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                                </svg>
-                                Google
-                            </button>
-                            <button type="button" className="social-btn">
-                                <svg viewBox="0 0 24 24" fill="#1877F2">
-                                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                                </svg>
-                                Facebook
-                            </button>
-                        </div>
                     </form>
 
                     <div className="auth-footer">
                         {isLogin ? (
-                            <p>Don't have an account? <a href="#" onClick={(e) => { e.preventDefault(); setIsLogin(false); }}>Sign Up</a></p>
+                            <p>Don't have an account? <a href="#" onClick={(e) => { e.preventDefault(); switchMode(false); }}>Sign Up</a></p>
                         ) : (
-                            <p>Already have an account? <a href="#" onClick={(e) => { e.preventDefault(); setIsLogin(true); }}>Login</a></p>
+                            <p>Already have an account? <a href="#" onClick={(e) => { e.preventDefault(); switchMode(true); }}>Login</a></p>
                         )}
                     </div>
                 </div>
