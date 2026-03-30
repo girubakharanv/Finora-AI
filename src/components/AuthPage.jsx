@@ -13,6 +13,7 @@ export default function AuthPage({ defaultMode = 'login' }) {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [name, setName] = useState('')
+    const [phone, setPhone] = useState('')
 
     // UI States
     const [loading, setLoading] = useState(false)
@@ -45,6 +46,7 @@ export default function AuthPage({ defaultMode = 'login' }) {
         if (!validateEmail(email)) return setErrorMsg('Please enter a valid email addressing containing "@" and domain.')
         if (password.length < 6) return setErrorMsg('Password must be at least 6 characters.')
         if (!isLogin && !name.trim()) return setErrorMsg('Please enter your full name.')
+        if (!isLogin && (!/^[0-9]{10}$/.test(phone))) return setErrorMsg('Please enter a valid 10-digit mobile number.')
 
         setLoading(true)
 
@@ -76,7 +78,7 @@ export default function AuthPage({ defaultMode = 'login' }) {
                     // Try to insert into profiles. Assumes RLS allows this, or it's done via DB trigger.
                     const { error: profileError } = await supabase
                         .from('profiles')
-                        .insert([{ id: data.user.id, username: name, email }])
+                        .insert([{ id: data.user.id, username: name, email, phone }])
 
                     if (profileError) {
                         console.error('Profile insertion error:', profileError.message)
@@ -172,6 +174,27 @@ export default function AuthPage({ defaultMode = 'login' }) {
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                                         <circle cx="12" cy="7" r="4" />
+                                    </svg>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Phone (signup only) */}
+                        {!isLogin && (
+                            <div className="form-group fade-in-up">
+                                <label htmlFor="auth-phone">Mobile Number</label>
+                                <div className="form-input-wrapper">
+                                    <input
+                                        id="auth-phone"
+                                        type="tel"
+                                        placeholder="10-digit mobile number"
+                                        value={phone}
+                                        onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                                        disabled={loading}
+                                        maxLength={10}
+                                    />
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.15 12 19.79 19.79 0 0 1 1.08 3.42 2 2 0 0 1 3 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21 16z" />
                                     </svg>
                                 </div>
                             </div>
