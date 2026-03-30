@@ -13,7 +13,7 @@ const navItems = [
     )
   },
   {
-    id: 'wallet', path: '/dashboard', icon: (
+    id: 'wallet', path: '/forecast', icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
         <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
@@ -62,6 +62,7 @@ export default function Sidebar() {
   const getActiveId = () => {
     if (location.pathname === '/analytics') return 'analytics'
     if (location.pathname === '/savings') return 'savings'
+    if (location.pathname === '/forecast') return 'wallet'
     return 'dashboard'
   }
 
