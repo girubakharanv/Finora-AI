@@ -1,8 +1,6 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const Razorpay = require('razorpay');
-const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
@@ -15,15 +13,9 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_KEY
 );
 
-// 2. Initialize Razorpay API
-const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
-
 // Helper: Auto-Categorize Description
 const autoCategorize = (desc) => {
-    const text = desc.toLowerCase();
+    const text = (desc || '').toLowerCase();
     if (text.includes('swiggy') || text.includes('zomato') || text.includes('food')) return 'Food & Dining';
     if (text.includes('uber') || text.includes('ola') || text.includes('metro') || text.includes('fuel')) return 'Transport';
     if (text.includes('amazon') || text.includes('flipkart') || text.includes('myntra')) return 'Shopping';
@@ -33,114 +25,70 @@ const autoCategorize = (desc) => {
 };
 
 // ==========================================
-// ENDPOINT: Create Razorpay Order (Send Money/Expense)
+// ENDPOINT: P2P Wallet Transfer (Send Money)
 // ==========================================
-app.post('/create-order', async (req, res) => {
+app.post('/p2p-transfer', async (req, res) => {
     try {
-        const { amount, receipt } = req.body;
+        const { sender_id, receiver_email, amount, description } = req.body;
+        const transferAmount = Number(amount);
 
-        const options = {
-            amount: amount * 100, // Amount in paise
-            currency: 'INR',
-            receipt: receipt || `receipt_${Date.now()}`,
-        };
-
-        const order = await razorpay.orders.create(options);
-        res.json(order);
-    } catch (err) {
-        console.error('Error creating order:', err);
-        res.status(500).json({ error: 'Failed to create order' });
-    }
-});
-
-// ==========================================
-// ENDPOINT: Verify Payment (Frontend Success Handler)
-// ==========================================
-app.post('/verify-payment', async (req, res) => {
-    try {
-        const {
-            razorpay_order_id,
-            razorpay_payment_id,
-            razorpay_signature,
-            user_id,
-            amount,
-            description
-        } = req.body;
-
-        // 1. Verify Signature securely
-        const sign = razorpay_order_id + "|" + razorpay_payment_id;
-        const expectedSign = crypto
-            .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-            .update(sign.toString())
-            .digest("hex");
-
-        if (razorpay_signature === expectedSign) {
-            // 2. Payment is Valid -> Insert into Supabase
-            const category = autoCategorize(description);
-
-            const { data, error } = await supabase
-                .from('transactions')
-                .insert([{
-                    user_id,
-                    amount,
-                    type: 'expense',
-                    category,
-                    method: 'upi', // Assuming UPI/Cards handled by checkout
-                    status: 'success',
-                    razorpay_payment_id,
-                    description
-                }]);
-
-            if (error) {
-                console.error('Supabase Error:', error);
-                return res.status(500).json({ error: 'Failed to record transaction' });
-            }
-
-            res.json({ success: true, message: 'Payment verified and recorded', category });
-        } else {
-            res.status(400).json({ success: false, error: 'Invalid Payment Signature' });
+        if (!sender_id || !receiver_email || !transferAmount || transferAmount <= 0) {
+            return res.status(400).json({ success: false, error: 'Invalid transfer details' });
         }
-    } catch (err) {
-        console.error('Verification error:', err);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-});
 
-// ==========================================
-// ENDPOINT: Webhook (For receiving income / external links)
-// ==========================================
-app.post('/razorpay-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-    try {
-        // Note: In production, verify razorpay webhook signature using crypto here
-        // const secret = process.env.WEBHOOK_SECRET;
+        // 1. Find Receiver by Email
+        const { data: profiles, error: profileErr } = await supabase
+            .from('profiles')
+            .select('id, username')
+            .eq('email', receiver_email.trim());
 
-        const event = req.body;
+        if (profileErr || !profiles || profiles.length === 0) {
+            return res.status(404).json({ success: false, error: 'Receiver email not found in Finora network.' });
+        }
 
-        if (event.event === 'payment.captured') {
-            const payment = event.payload.payment.entity;
+        const receiver = profiles[0];
 
-            // Since this is generic incoming money (not tied to an explicit session here without metadata)
-            // Normally we pass user_id in payment notes. Assuming notes.user_id exists:
-            const user_id = payment.notes?.user_id;
+        if (receiver.id === sender_id) {
+            return res.status(400).json({ success: false, error: 'You cannot send money to yourself.' });
+        }
 
-            if (user_id) {
-                await supabase.from('transactions').insert([{
-                    user_id,
-                    amount: payment.amount / 100,
+        // 2. Classify Category for sender logic
+        const category = autoCategorize(description);
+
+        // 3. Inject Ledger Entries (Bypassing RLS with Admin SDK)
+        const { error: txErr } = await supabase
+            .from('transactions')
+            .insert([
+                {
+                    user_id: sender_id,
+                    amount: transferAmount,
+                    type: 'expense',
+                    category: category,
+                    method: 'p2p',
+                    status: 'success',
+                    description: description || `Transfer to ${receiver.username}`
+                },
+                {
+                    user_id: receiver.id,
+                    amount: transferAmount,
                     type: 'income',
                     category: 'Deposit',
-                    method: payment.method,
+                    method: 'p2p',
                     status: 'success',
-                    razorpay_payment_id: payment.id,
-                    description: payment.description || 'Incoming Transfer'
-                }]);
-            }
+                    description: description || 'Incoming Transfer'
+                }
+            ]);
+
+        if (txErr) {
+            console.error('Ledger error:', txErr);
+            return res.status(500).json({ success: false, error: 'Failed to process ledger transmission.' });
         }
 
-        res.json({ status: 'ok' });
+        res.json({ success: true, message: `Successfully transferred ₹${transferAmount} to ${receiver.username}` });
+
     } catch (err) {
-        console.error('Webhook error:', err);
-        res.status(500).send('Webhook Error');
+        console.error('Transfer error:', err);
+        res.status(500).json({ success: false, error: 'Internal Server Error' });
     }
 });
 

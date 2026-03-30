@@ -1,34 +1,22 @@
 import React, { useState } from 'react'
-import { supabase } from '../supabaseClient'
-import './Auth.css' // Reusing some base styles for inputs
-
-// Helper to dynamically load Razorpay script
-const loadRazorpay = () => {
-    return new Promise((resolve) => {
-        const script = document.createElement('script')
-        script.src = 'https://checkout.razorpay.com/v1/checkout.js'
-        script.onload = () => {
-            resolve(true)
-        }
-        script.onerror = () => {
-            resolve(false)
-        }
-        document.body.appendChild(script)
-    })
-}
 
 export default function PaymentScreen({ user }) {
     const [amount, setAmount] = useState('')
+    const [receiverEmail, setReceiverEmail] = useState('')
     const [description, setDescription] = useState('')
     const [loading, setLoading] = useState(false)
     const [errorMsg, setErrorMsg] = useState('')
     const [successMsg, setSuccessMsg] = useState('')
-    const [statusMascot, setStatusMascot] = useState('🤖') // Default, Happy 🎉, Sad 😥
+    const [statusMascot, setStatusMascot] = useState('🦊')
 
-    const handlePayment = async (e) => {
+    const handleTransfer = async (e) => {
         e.preventDefault()
         if (!amount || isNaN(amount) || amount <= 0) {
             setErrorMsg('Please enter a valid amount')
+            return
+        }
+        if (!receiverEmail.includes('@')) {
+            setErrorMsg('Please enter a valid receiver email')
             return
         }
 
@@ -37,125 +25,107 @@ export default function PaymentScreen({ user }) {
         setSuccessMsg('')
         setStatusMascot('⏳')
 
-        const res = await loadRazorpay()
-        if (!res) {
-            setErrorMsg('Razorpay SDK failed to load. Check your connection.')
-            setLoading(false)
-            setStatusMascot('😥')
-            return
-        }
-
         try {
-            // 1. Create Order on our local Backend
-            const orderResponse = await fetch('http://localhost:5000/create-order', {
+            const res = await fetch('http://localhost:5000/p2p-transfer', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ amount: Number(amount) })
+                body: JSON.stringify({
+                    sender_id: user.id,
+                    receiver_email: receiverEmail,
+                    amount: Number(amount),
+                    description: description || 'Transfer'
+                })
             })
 
-            if (!orderResponse.ok) {
-                const text = await orderResponse.text()
-                throw new Error("Ensure backend is running on port 5000. Setup your keys in backend/.env")
-            }
+            const data = await res.json()
 
-            const order = await orderResponse.json()
-
-            // 2. Initialize Razorpay Checkout
-            // NOTE: The key_id here should ideally fall back to a public env variable
-            // Since this is a test environment, the user will replace this string or set it.
-            const checkoutOptions = {
-                key: process.env.VITE_RAZORPAY_KEY_ID || 'YOUR_RAZORPAY_KEY_ID', // Replace in production
-                amount: order.amount,
-                currency: order.currency,
-                name: 'Finora AI',
-                description: description || 'Smart Payment',
-                order_id: order.id,
-                theme: {
-                    color: '#B565FF' // Finora Neon Purple
-                },
-                handler: async function (response) {
-                    try {
-                        // 3. Verify Payment Signature Backend
-                        const verifyRes = await fetch('http://localhost:5000/verify-payment', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                razorpay_order_id: response.razorpay_order_id,
-                                razorpay_payment_id: response.razorpay_payment_id,
-                                razorpay_signature: response.razorpay_signature,
-                                user_id: user.id,
-                                amount: Number(amount),
-                                description: description || 'General Expense'
-                            })
-                        })
-
-                        const verifyData = await verifyRes.json()
-
-                        if (verifyData.success) {
-                            setSuccessMsg(`Payment Success! Logged under: ${verifyData.category}`)
-                            setStatusMascot('🎉')
-                            setAmount('')
-                            setDescription('')
-                        } else {
-                            setErrorMsg(verifyData.error || 'Verification failed')
-                            setStatusMascot('😥')
-                        }
-                    } catch (err) {
-                        setErrorMsg('Failed to verify payment with server')
-                        setStatusMascot('😥')
-                    }
-                },
-                prefill: {
-                    name: user.user_metadata?.username || 'User',
-                    email: user.email || ''
-                }
-            }
-
-            const rzp = new window.Razorpay(checkoutOptions)
-            rzp.on('payment.failed', function (response) {
-                setErrorMsg(`Payment Failed: ${response.error.description}`)
+            if (res.ok && data.success) {
+                setSuccessMsg(data.message)
+                setStatusMascot('🎉')
+                setAmount('')
+                setReceiverEmail('')
+                setDescription('')
+            } else {
+                setErrorMsg(data.error || 'Failed to process transfer')
                 setStatusMascot('😥')
-            })
-            rzp.open()
+            }
         } catch (err) {
-            setErrorMsg(err.message)
+            setErrorMsg('Network Error: Ensure your Finora backend (port 5000) is running.')
             setStatusMascot('😥')
         }
+
         setLoading(false)
     }
 
     return (
-        <div style={{ padding: '40px', maxWidth: '600px', margin: '0 auto' }} className="fade-in-up">
-            <h2 style={{ fontSize: '2rem', marginBottom: '10px' }}>Make a Payment</h2>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '30px' }}>
-                Securely send money via Razorpay. Finora AI will auto-categorize this expense.
-            </p>
+        <div style={{ padding: '40px', maxWidth: '1000px', margin: '0 auto', display: 'flex', gap: '40px', flexWrap: 'wrap' }} className="fade-in-up">
 
-            <div style={{ background: 'white', padding: '40px', borderRadius: '30px', boxShadow: '0 10px 40px rgba(0,0,0,0.05)', textAlign: 'center' }}>
+            {/* LEFT: Receive Section */}
+            <div style={{ flex: '1 1 350px', background: 'white', padding: '40px', borderRadius: '30px', boxShadow: '0 10px 40px rgba(0,0,0,0.05)', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                <h3 style={{ fontSize: '1.5rem', marginBottom: '10px' }}>Receive Money</h3>
+                <p style={{ color: 'var(--text-muted)', marginBottom: '30px', fontSize: '0.95rem' }}>
+                    Share your registered email with friends so they can send you funds instantly.
+                </p>
 
-                <div style={{ fontSize: '4rem', marginBottom: '20px' }}>
-                    {statusMascot}
+                <div style={{ width: '200px', height: '200px', background: 'var(--bg-main)', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--primary)', marginBottom: '24px' }}>
+                    <svg viewBox="0 0 24 24" width="80" height="80" fill="none" stroke="var(--primary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                        <rect x="7" y="7" width="3" height="3" />
+                        <rect x="14" y="7" width="3" height="3" />
+                        <rect x="7" y="14" width="3" height="3" />
+                        <rect x="14" y="14" width="3" height="3" />
+                    </svg>
+                </div>
+
+                <div style={{ background: '#F8F9FA', padding: '16px 24px', borderRadius: '16px', width: '100%', fontSize: '1.1rem', fontWeight: '600', color: 'var(--text-main)', border: '1px solid #E2E8F0' }}>
+                    {user?.email || 'user@example.com'}
+                </div>
+            </div>
+
+            {/* RIGHT: Send Section */}
+            <div style={{ flex: '1 1 450px', background: 'white', padding: '40px', borderRadius: '30px', boxShadow: '0 10px 40px rgba(0,0,0,0.05)' }}>
+                <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+                    <div style={{ fontSize: '4rem', marginBottom: '10px' }}>
+                        {statusMascot}
+                    </div>
+                    <h2 style={{ fontSize: '1.8rem', marginBottom: '8px' }}>Send Money</h2>
+                    <p style={{ color: 'var(--text-muted)' }}>Zero fees. Instant Finora network transfers.</p>
                 </div>
 
                 {errorMsg && (
-                    <div style={{ background: '#FFF0F5', color: '#F43F5E', padding: '12px', borderRadius: '12px', marginBottom: '20px', fontWeight: 500 }}>
+                    <div style={{ background: '#FFF0F5', color: '#F43F5E', padding: '12px', borderRadius: '12px', marginBottom: '20px', fontWeight: 500, textAlign: 'center' }}>
                         {errorMsg}
                     </div>
                 )}
                 {successMsg && (
-                    <div style={{ background: '#F0FDF4', color: '#10B981', padding: '12px', borderRadius: '12px', marginBottom: '20px', fontWeight: 500 }}>
+                    <div style={{ background: '#F0FDF4', color: '#10B981', padding: '12px', borderRadius: '12px', marginBottom: '20px', fontWeight: 500, textAlign: 'center' }}>
                         {successMsg}
                     </div>
                 )}
 
-                <form onSubmit={handlePayment} style={{ display: 'flex', flexDirection: 'column', gap: '20px', textAlign: 'left' }}>
+                <form onSubmit={handleTransfer} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '8px' }}>
+                            To (Enter receiver's Finora Email)
+                        </label>
+                        <input
+                            type="email"
+                            placeholder="friend@example.com"
+                            value={receiverEmail}
+                            onChange={(e) => setReceiverEmail(e.target.value)}
+                            className="auth-input"
+                            required
+                        />
+                    </div>
+
                     <div>
                         <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '8px' }}>
                             Amount (₹)
                         </label>
                         <input
                             type="number"
-                            placeholder="Enter amount (e.g., 500)"
+                            placeholder="e.g., 500"
                             value={amount}
                             onChange={(e) => setAmount(e.target.value)}
                             className="auth-input"
@@ -165,11 +135,11 @@ export default function PaymentScreen({ user }) {
 
                     <div>
                         <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '8px' }}>
-                            What is this for? (Helps AI categorize)
+                            What's it for? (Categorized automatically)
                         </label>
                         <input
                             type="text"
-                            placeholder="e.g., Swiggy Lunch, Uber Ride..."
+                            placeholder="e.g., Dinner, Rent, Uber split..."
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             className="auth-input"
@@ -180,7 +150,7 @@ export default function PaymentScreen({ user }) {
                         type="submit"
                         disabled={loading}
                         style={{
-                            background: 'linear-gradient(135deg, #7C83FF 0%, #B565FF 100%)',
+                            background: 'linear-gradient(135deg, #7DDBA3 0%, #38B583 100%)',
                             color: 'white',
                             border: 'none',
                             padding: '16px',
@@ -190,14 +160,14 @@ export default function PaymentScreen({ user }) {
                             cursor: loading ? 'not-allowed' : 'pointer',
                             marginTop: '10px',
                             transition: 'all 0.2s',
-                            boxShadow: '0 10px 20px rgba(181, 101, 255, 0.3)'
+                            boxShadow: '0 10px 20px rgba(86, 197, 150, 0.3)'
                         }}
                     >
-                        {loading ? 'Processing...' : `Pay ₹${amount || '0'} Securely`}
+                        {loading ? 'Processing Transfer...' : `Send ₹${amount || '0'}`}
                     </button>
 
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '10px' }}>
-                        🔒 Secured by Razorpay Payment Gateway
+                        ⚡ Finora Secure Transfer Network
                     </p>
                 </form>
             </div>
