@@ -59,7 +59,7 @@ export default function LandingPage({ session }) {
                     <div className="mascot-3d-wrapper">
                         <span className="mascot-3d-fox">🦊</span>
                         <span className="element-3d float-1">🪙</span>
-                        <span className="element-3d float-2">📈</span>
+                        <span className="element-3d float-2">💸</span>
                         <span className="element-3d float-3">💎</span>
                         <div className="neon-glow-blob blob-1"></div>
                         <div className="neon-glow-blob blob-2"></div>

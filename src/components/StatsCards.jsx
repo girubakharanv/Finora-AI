@@ -3,8 +3,8 @@ import React from 'react'
 const stats = [
     {
         label: 'Total Income',
-        value: '₹1,24,500',
-        change: '+8.2%',
+        value: '₹0',
+        change: '0%',
         up: true,
         color: 'blue',
         icon: (
@@ -16,8 +16,8 @@ const stats = [
     },
     {
         label: 'Total Expenses',
-        value: '₹76,150',
-        change: '-3.4%',
+        value: '₹0',
+        change: '0%',
         up: false,
         color: 'pink',
         icon: (
@@ -30,8 +30,8 @@ const stats = [
     },
     {
         label: 'Savings',
-        value: '₹48,350',
-        change: '+15.1%',
+        value: '₹0',
+        change: '0%',
         up: true,
         color: 'green',
         icon: (
@@ -42,8 +42,8 @@ const stats = [
     },
     {
         label: 'Investments',
-        value: '₹35,200',
-        change: '+6.8%',
+        value: '₹0',
+        change: '0%',
         up: true,
         color: 'purple',
         icon: (

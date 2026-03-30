@@ -1,14 +1,25 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { supabase } from '../supabaseClient'
 
 export default function Sidebar({ onAddClick }) {
   const navigate = useNavigate()
   const location = useLocation()
+  const [initial, setInitial] = useState('U')
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user && user.user_metadata?.username) {
+        setInitial(user.user_metadata.username.charAt(0).toUpperCase())
+      }
+    })
+  }, [])
 
   const getActiveId = () => {
     if (location.pathname === '/analytics') return 'analytics'
     if (location.pathname === '/savings') return 'savings'
     if (location.pathname === '/forecast') return 'forecast'
+    if (location.pathname === '/pay') return 'pay'
     return 'home'
   }
 
@@ -42,10 +53,9 @@ export default function Sidebar({ onAddClick }) {
       )
     },
     {
-      id: 'add', label: 'Add', path: null, isAction: true, icon: (
+      id: 'pay', label: 'Pay', path: '/pay', isAction: true, icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="12" y1="5" x2="12" y2="19" />
-          <line x1="5" y1="12" x2="19" y2="12" />
+          <path d="M5 12h14M12 5l7 7-7 7" />
         </svg>
       )
     },
@@ -102,7 +112,7 @@ export default function Sidebar({ onAddClick }) {
 
       <div className="sidebar-bottom">
         <div className="sidebar-avatar" title="Profile">
-          N
+          {initial}
         </div>
       </div>
     </aside>

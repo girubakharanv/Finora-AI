@@ -12,6 +12,7 @@ import PieChart from './components/PieChart'
 import LineGraph from './components/LineGraph'
 import AIInsights from './components/AIInsights'
 import Transactions from './components/Transactions'
+import PaymentScreen from './components/PaymentScreen'
 import AddExpense from './components/AddExpense'
 import SpendingAnalysis from './components/SpendingAnalysis'
 import SavingsQuest from './components/SavingsQuest'
@@ -20,11 +21,11 @@ import SmartAlerts from './components/SmartAlerts'
 import FloatChat from './components/FloatChat'
 
 function AppShell({ children }) {
-  const [showExpense, setShowExpense] = useState(false)
+  const navigate = useNavigate()
 
   return (
     <div className="app-layout">
-      <Sidebar onAddClick={() => setShowExpense(true)} />
+      <Sidebar />
       <div className="main-area">
         <Header />
         <div className="content-area">
@@ -34,16 +35,14 @@ function AppShell({ children }) {
 
       <button
         className="fab-add-expense"
-        onClick={() => setShowExpense(true)}
-        title="Add Expense"
+        onClick={() => navigate('/pay')}
+        title="Send Payment"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="12" y1="5" x2="12" y2="19" />
-          <line x1="5" y1="12" x2="19" y2="12" />
+          <path d="M5 12h14M12 5l7 7-7 7" />
         </svg>
       </button>
 
-      <AddExpense isOpen={showExpense} onClose={() => setShowExpense(false)} />
       <FloatChat />
     </div>
   )
@@ -109,6 +108,7 @@ function App() {
       <Route path="/login" element={session ? <Navigate to="/dashboard" replace /> : <AuthPage defaultMode="login" />} />
       <Route path="/signup" element={session ? <Navigate to="/dashboard" replace /> : <AuthPage defaultMode="signup" />} />
       <Route path="/dashboard" element={<ProtectedRoute session={session}><AppShell><DashboardPage /></AppShell></ProtectedRoute>} />
+      <Route path="/pay" element={<ProtectedRoute session={session}><AppShell><PaymentScreen user={session?.user} /></AppShell></ProtectedRoute>} />
       <Route path="/analytics" element={<ProtectedRoute session={session}><AppShell><AnalyticsPage /></AppShell></ProtectedRoute>} />
       <Route path="/savings" element={<ProtectedRoute session={session}><AppShell><SavingsQuest /></AppShell></ProtectedRoute>} />
       <Route path="/forecast" element={<ProtectedRoute session={session}><AppShell><AIForecast /></AppShell></ProtectedRoute>} />
