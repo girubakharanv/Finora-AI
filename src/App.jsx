@@ -15,6 +15,7 @@ import SpendingAnalysis from './components/SpendingAnalysis'
 import SavingsQuest from './components/SavingsQuest'
 import AIForecast from './components/AIForecast'
 import SmartAlerts from './components/SmartAlerts'
+import FloatChat from './components/FloatChat'
 
 function AppShell({ children }) {
   const [showExpense, setShowExpense] = useState(false)
@@ -41,6 +42,7 @@ function AppShell({ children }) {
       </button>
 
       <AddExpense isOpen={showExpense} onClose={() => setShowExpense(false)} />
+      <FloatChat />
     </div>
   )
 }
