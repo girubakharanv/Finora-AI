@@ -14,6 +14,7 @@ import AddExpense from './components/AddExpense'
 import SpendingAnalysis from './components/SpendingAnalysis'
 import SavingsQuest from './components/SavingsQuest'
 import AIForecast from './components/AIForecast'
+import SmartAlerts from './components/SmartAlerts'
 
 function AppShell({ children }) {
   const [showExpense, setShowExpense] = useState(false)
@@ -54,6 +55,7 @@ function DashboardPage() {
         <LineGraph />
       </div>
       <AIInsights />
+      <SmartAlerts />
       <Transactions />
     </div>
   )
