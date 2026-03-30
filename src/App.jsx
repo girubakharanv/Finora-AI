@@ -12,6 +12,7 @@ import AIInsights from './components/AIInsights'
 import Transactions from './components/Transactions'
 import AddExpense from './components/AddExpense'
 import SpendingAnalysis from './components/SpendingAnalysis'
+import SavingsQuest from './components/SavingsQuest'
 
 function AppShell({ children }) {
   const [showExpense, setShowExpense] = useState(false)
@@ -67,6 +68,7 @@ function App() {
       <Route path="/" element={<AuthPage />} />
       <Route path="/dashboard" element={<AppShell><DashboardPage /></AppShell>} />
       <Route path="/analytics" element={<AppShell><AnalyticsPage /></AppShell>} />
+      <Route path="/savings" element={<AppShell><SavingsQuest /></AppShell>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

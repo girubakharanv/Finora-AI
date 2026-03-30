@@ -38,7 +38,7 @@ const navItems = [
     )
   },
   {
-    id: 'savings', path: '/dashboard', icon: (
+    id: 'savings', path: '/savings', icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z" />
         <path d="M2 9.5a.5.5 0 1 0 1 0 .5.5 0 1 0-1 0" />
@@ -61,6 +61,7 @@ export default function Sidebar() {
 
   const getActiveId = () => {
     if (location.pathname === '/analytics') return 'analytics'
+    if (location.pathname === '/savings') return 'savings'
     return 'dashboard'
   }
 
