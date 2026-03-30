@@ -22,7 +22,7 @@ function AppShell({ children }) {
 
   return (
     <div className="app-layout">
-      <Sidebar />
+      <Sidebar onAddClick={() => setShowExpense(true)} />
       <div className="main-area">
         <Header />
         <div className="content-area">
