@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
 import './App.css'
 import LandingPage from './components/LandingPage'
@@ -12,7 +12,7 @@ import PieChart from './components/PieChart'
 import LineGraph from './components/LineGraph'
 import AIInsights from './components/AIInsights'
 import Transactions from './components/Transactions'
-import PaymentScreen from './components/PaymentScreen'
+import PayScreen from './components/PayScreen'
 import AddExpense from './components/AddExpense'
 import SpendingAnalysis from './components/SpendingAnalysis'
 import SavingsQuest from './components/SavingsQuest'
@@ -108,7 +108,7 @@ function App() {
       <Route path="/login" element={session ? <Navigate to="/dashboard" replace /> : <AuthPage defaultMode="login" />} />
       <Route path="/signup" element={session ? <Navigate to="/dashboard" replace /> : <AuthPage defaultMode="signup" />} />
       <Route path="/dashboard" element={<ProtectedRoute session={session}><AppShell><DashboardPage /></AppShell></ProtectedRoute>} />
-      <Route path="/pay" element={<ProtectedRoute session={session}><AppShell><PaymentScreen user={session?.user} /></AppShell></ProtectedRoute>} />
+      <Route path="/pay" element={<ProtectedRoute session={session}><AppShell><PayScreen user={session?.user} /></AppShell></ProtectedRoute>} />
       <Route path="/analytics" element={<ProtectedRoute session={session}><AppShell><AnalyticsPage /></AppShell></ProtectedRoute>} />
       <Route path="/savings" element={<ProtectedRoute session={session}><AppShell><SavingsQuest /></AppShell></ProtectedRoute>} />
       <Route path="/forecast" element={<ProtectedRoute session={session}><AppShell><AIForecast /></AppShell></ProtectedRoute>} />
