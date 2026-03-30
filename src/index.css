@@ -1,0 +1,145 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+/* ===== CSS Variables ===== */
+:root {
+  --bg-main: #F5F3FF;
+  --bg-card: #FFFFFF;
+  --bg-sidebar: #FFFFFF;
+
+  --primary: #7C83FF;
+  --primary-light: #A5ABFF;
+  --primary-soft: #E8E9FF;
+
+  --accent-blue: #8EC5FC;
+  --accent-blue-soft: #D6EAFF;
+  --accent-purple: #C3A6F7;
+  --accent-purple-soft: #EFDFFF;
+  --accent-green: #7DDBA3;
+  --accent-green-soft: #D2F5E3;
+  --accent-pink: #FFA5B4;
+  --accent-pink-soft: #FFE0E6;
+  --accent-yellow: #FFD97D;
+  --accent-yellow-soft: #FFF3D6;
+  --accent-orange: #FFB07C;
+
+  --text-dark: #2D2B55;
+  --text-secondary: #7B7A8E;
+  --text-light: #A9A8BD;
+
+  --shadow-sm: 0 2px 8px rgba(124, 131, 255, 0.08);
+  --shadow-md: 0 4px 20px rgba(124, 131, 255, 0.12);
+  --shadow-lg: 0 8px 40px rgba(124, 131, 255, 0.16);
+  --shadow-float: 0 10px 50px rgba(124, 131, 255, 0.2);
+
+  --radius-sm: 14px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+  --radius-xl: 36px;
+  --radius-full: 9999px;
+
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===== Reset & Base ===== */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background: var(--bg-main);
+  color: var(--text-dark);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--accent-purple-soft);
+  border-radius: 20px;
+}
+
+/* ===== Animations ===== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-5deg); }
+  75% { transform: rotate(5deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes wink {
+  0%, 40%, 60%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.1); }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.3s; }
