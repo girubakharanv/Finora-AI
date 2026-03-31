@@ -61,6 +61,16 @@ export default function AuthPage({ defaultMode = 'login' }) {
                 }
                 // App.jsx will automatically redirect upon session change
             } else {
+                const { data: existingPhone } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .eq('phone_number', phone)
+                    .maybeSingle();
+
+                if (existingPhone) {
+                    throw new Error('This mobile number is already registered. Please use another one.');
+                }
+
                 const { data, error } = await supabase.auth.signUp({
                     email,
                     password,
@@ -82,7 +92,10 @@ export default function AuthPage({ defaultMode = 'login' }) {
 
                     if (profileError) {
                         console.error('Profile insertion error:', profileError.message)
-                        // We don't throw here to ensure the user still knows they signed up successfully
+                        if ((profileError.message && profileError.message.includes('profiles_phone_number_key')) || 
+                            (profileError.code === '23505' && profileError.message && profileError.message.includes('phone_number'))) {
+                            throw new Error("Account created, but mobile number is already in use by another profile. Please update it in settings later.");
+                        }
                     }
                 }
                 setSuccessMsg('Account created successfully!')

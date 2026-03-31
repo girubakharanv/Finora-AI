@@ -1,5 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { supabase } from '../supabaseClient'
 import './SavingsQuest.css'
+import HealthcareSavings from './HealthcareSavings'
 
 const missions = [
     { id: 1, emoji: '💰', title: 'Save ₹100 today', desc: 'Skip one small purchase', xp: 25, done: true },
@@ -28,6 +31,9 @@ const milestones = [
 ]
 
 export default function SavingsQuest() {
+    const navigate = useNavigate()
+    const [showHealthcare, setShowHealthcare] = useState(false)
+
     const [completedMissions, setCompletedMissions] = useState(
         missions.reduce((acc, m) => ({ ...acc, [m.id]: m.done }), {})
     )
@@ -37,7 +43,62 @@ export default function SavingsQuest() {
     const currentXP = 720
     const maxXP = 1000
     const xpPercent = (currentXP / maxXP) * 100
-    const totalSaved = 48350
+    const [totalSaved, setTotalSaved] = useState(0)
+    const [streak, setStreak] = useState(0)
+
+    useEffect(() => {
+        const fetchSavings = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) return
+
+            const { data } = await supabase
+                .from('transactions')
+                .select('amount, type, category, created_at')
+                .eq('user_id', user.id)
+                .eq('type', 'transfer')
+                .eq('category', 'Savings')
+
+            if (data) {
+                // Total savings (only positive deposits, not investment deductions)
+                const total = data
+                    .filter(tx => Number(tx.amount) > 0)
+                    .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0)
+                setTotalSaved(total)
+
+                // Streak: count consecutive days backwards from today where user saved
+                const savingsDays = new Set(
+                    data
+                        .filter(tx => Number(tx.amount) > 0) // only deposits
+                        .map(tx => new Date(tx.created_at).toLocaleDateString('en-CA')) // 'YYYY-MM-DD'
+                )
+
+                let streakCount = 0
+                const today = new Date()
+                for (let i = 0; i < 365; i++) {
+                    const d = new Date(today)
+                    d.setDate(today.getDate() - i)
+                    const key = d.toLocaleDateString('en-CA')
+                    if (savingsDays.has(key)) {
+                        streakCount++
+                    } else {
+                        break // streak broken
+                    }
+                }
+                setStreak(streakCount)
+            }
+        }
+
+        fetchSavings()
+
+        const txChannel = supabase
+            .channel('public:transactions:savingsquest')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => {
+                fetchSavings()
+            })
+            .subscribe()
+
+        return () => supabase.removeChannel(txChannel)
+    }, [])
 
     const handleComplete = (id) => {
         if (completedMissions[id]) return
@@ -47,6 +108,46 @@ export default function SavingsQuest() {
     }
 
     const completedCount = Object.values(completedMissions).filter(Boolean).length
+
+    if (showHealthcare) {
+        return (
+            <div className="savings-page fade-in-up">
+                <button 
+                    onClick={() => setShowHealthcare(false)} 
+                    style={{ 
+                        display: 'inline-flex', 
+                        alignItems: 'center', 
+                        gap: '6px', 
+                        padding: '10px 18px', 
+                        borderRadius: '24px', 
+                        border: '1.5px solid #E5E7EB', 
+                        background: 'white', 
+                        color: '#4B5563', 
+                        fontWeight: '700', 
+                        fontSize: '0.85rem',
+                        cursor: 'pointer', 
+                        width: 'fit-content',
+                        marginBottom: '4px',
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+                    }}
+                    onMouseEnter={e => {
+                        e.currentTarget.style.transform = 'translateX(-3px)';
+                        e.currentTarget.style.borderColor = '#A7F3D0';
+                        e.currentTarget.style.color = '#10B981';
+                    }}
+                    onMouseLeave={e => {
+                        e.currentTarget.style.transform = 'translateX(0)';
+                        e.currentTarget.style.borderColor = '#E5E7EB';
+                        e.currentTarget.style.color = '#4B5563';
+                    }}
+                >
+                    <span style={{ fontSize: '1.2rem', lineHeight: '1' }}>←</span> Back to Savings
+                </button>
+                <HealthcareSavings />
+            </div>
+        )
+    }
 
     return (
         <div className="savings-page">
@@ -94,7 +195,7 @@ export default function SavingsQuest() {
                                     cx="50" cy="50" r="42"
                                     fill="none" stroke="url(#savGrad)" strokeWidth="8"
                                     strokeLinecap="round"
-                                    strokeDasharray={`${48.35 * 2.64} ${264 - 48.35 * 2.64}`}
+                                    strokeDasharray={`${Math.min(100, (totalSaved / 100000) * 100) * 2.64} ${264 - Math.min(100, (totalSaved / 100000) * 100) * 2.64}`}
                                     transform="rotate(-90 50 50)"
                                     className="savings-ring-progress"
                                 />
@@ -105,7 +206,7 @@ export default function SavingsQuest() {
                                     </linearGradient>
                                 </defs>
                             </svg>
-                            <span className="savings-ring-pct">48%</span>
+                            <span className="savings-ring-pct">{Math.min(100, Math.floor((totalSaved / 100000) * 100))}%</span>
                         </div>
                     </div>
 
@@ -132,16 +233,45 @@ export default function SavingsQuest() {
                     <div className="savings-mascot-speech">
                         <p>{celebrating
                             ? "Amazing! You completed a mission! Keep it up! 🎉"
-                            : "You're on fire! 🔥 12-day savings streak. Let's make it 13!"
+                            : streak > 0
+                            ? `You're on fire! 🔥 ${streak}-day savings streak. Let's make it ${streak + 1}!`
+                            : "Start saving today to build your streak! 💪"
                         }</p>
                     </div>
                     <div className="savings-streak-badge">
                         <span className="streak-fire">🔥</span>
                         <div>
-                            <span className="streak-num">12 days</span>
+                            <span className="streak-num">{streak > 0 ? `${streak} day${streak !== 1 ? 's' : ''}` : 'No streak yet'}</span>
                             <span className="streak-label">Savings Streak</span>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            {/* ── Action Modules ─── */}
+            <div className="sq-action-modules fade-in-up stagger-1">
+                <div 
+                    className="sq-module-card"
+                    onClick={() => setShowHealthcare(true)}
+                >
+                    <div className="sq-module-icon hc">🩺</div>
+                    <div className="sq-module-text">
+                        <h3>Healthcare Fund</h3>
+                        <p>Manage medical savings</p>
+                    </div>
+                    <div className="sq-module-arrow">➡️</div>
+                </div>
+
+                <div 
+                    className="sq-module-card invest"
+                    onClick={() => navigate('/investments')}
+                >
+                    <div className="sq-module-icon inv">📈</div>
+                    <div className="sq-module-text">
+                        <h3>Invest & Grow</h3>
+                        <p>Put your savings to work</p>
+                    </div>
+                    <div className="sq-module-arrow">➡️</div>
                 </div>
             </div>
 

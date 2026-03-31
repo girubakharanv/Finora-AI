@@ -1,6 +1,38 @@
-/* ===== Smart Alerts Component ===== */
+/* ===== Smart Alerts Dropdown Context ===== */
+.notif-wrapper {
+    position: relative;
+}
+
+.notif-dropdown {
+    position: absolute;
+    top: calc(100% + 12px);
+    right: 0;
+    width: 420px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+    z-index: 2000;
+    padding: 20px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.notif-dropdown::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    right: 20px;
+    width: 12px;
+    height: 12px;
+    background: white;
+    transform: rotate(45deg);
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    border-left: 1px solid rgba(0, 0, 0, 0.08);
+}
+
 .smart-alerts-container {
-    margin-top: 12px;
     display: flex;
     flex-direction: column;
     gap: 16px;

@@ -699,3 +699,47 @@
         font-size: 2rem;
     }
 }
+
+/* ---- CATEGORY SELECTOR IN PAY SCREEN ---- */
+.pay-category-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.pay-cat-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: #F7F9FC;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 10px 4px;
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #4A5568;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pay-cat-btn:hover {
+    background: white;
+    border-color: #B565FF;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(181, 101, 255, 0.15);
+}
+
+.pay-cat-btn.active {
+    background: #F0F4FF;
+    border-color: #7C83FF;
+    color: #7C83FF;
+    box-shadow: 0 4px 12px rgba(124, 131, 255, 0.2);
+}
+
+.pay-cat-btn .cat-emoji {
+    font-size: 1.4rem;
+}

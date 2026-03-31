@@ -1,16 +1,16 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
+import { supabase } from '../supabaseClient'
 import './Landing.css'
 
 export default function LandingPage({ session }) {
     const navigate = useNavigate()
 
-    const handleGetStarted = () => {
+    const handleGetStarted = async () => {
         if (session) {
-            navigate('/dashboard')
-        } else {
-            navigate('/signup')
+            await supabase.auth.signOut()
         }
+        navigate('/login')
     }
 
     return (

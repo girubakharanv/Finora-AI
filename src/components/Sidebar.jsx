@@ -17,7 +17,10 @@ export default function Sidebar({ onAddClick }) {
 
   const getActiveId = () => {
     if (location.pathname === '/analytics') return 'analytics'
+    if (location.pathname === '/budget') return 'budget'
     if (location.pathname === '/savings') return 'savings'
+    if (location.pathname === '/investments') return 'investments'
+    if (location.pathname === '/insurance') return 'insurance'
     if (location.pathname === '/forecast') return 'forecast'
     if (location.pathname === '/pay') return 'pay'
     return 'home'
@@ -53,6 +56,15 @@ export default function Sidebar({ onAddClick }) {
       )
     },
     {
+      id: 'budget', label: 'Budget', path: '/budget', icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="4" width="20" height="16" rx="2" />
+          <path d="M2 10h20" />
+          <path d="M12 4v16" />
+        </svg>
+      )
+    },
+    {
       id: 'pay', label: 'Pay', path: '/pay', isAction: true, icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M5 12h14M12 5l7 7-7 7" />
@@ -64,6 +76,20 @@ export default function Sidebar({ onAddClick }) {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z" />
           <path d="M2 9.5a.5.5 0 1 0 1 0 .5.5 0 1 0-1 0" />
+        </svg>
+      )
+    },
+    {
+      id: 'investments', label: 'Invest', path: '/investments', icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+        </svg>
+      )
+    },
+    {
+      id: 'insurance', label: 'Insurance', path: '/insurance', icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
         </svg>
       )
     },
@@ -89,9 +115,18 @@ export default function Sidebar({ onAddClick }) {
   return (
     <aside className="sidebar">
       <div className="sidebar-logo" title="Finora AI" onClick={() => navigate('/dashboard')}>
-        <svg viewBox="0 0 24 24">
-          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-        </svg>
+        <img 
+          src="/logo.png" 
+          alt="Finora AI Logo" 
+          style={{ 
+            width: '54px', 
+            height: 'auto', 
+            transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            cursor: 'pointer'
+          }} 
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.15)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        />
       </div>
 
       <nav className="sidebar-nav">
@@ -100,12 +135,11 @@ export default function Sidebar({ onAddClick }) {
             key={item.id}
             className={`nav-btn ${active === item.id ? 'active' : ''} ${item.isAction ? 'nav-action-btn' : ''} ${item.mobileHidden ? 'mobile-hidden' : ''} ${item.mobileOnly ? 'mobile-only' : ''}`}
             onClick={() => handleNavClick(item.id, item.path)}
-            title={item.label}
+            data-title={item.label}
           >
             <div className="nav-icon-wrapper">
               {item.icon}
             </div>
-            <span className="nav-label">{item.label}</span>
           </button>
         ))}
       </nav>

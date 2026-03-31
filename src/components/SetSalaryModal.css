@@ -1,0 +1,114 @@
+.salary-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(13, 11, 38, 0.7);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.salary-modal-card {
+    background: white;
+    padding: 32px;
+    border-radius: 24px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.sm-header .sm-icon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 12px;
+}
+
+.sm-header h2 {
+    color: #1A1640;
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+    font-family: 'Outfit', sans-serif;
+}
+
+.sm-header p {
+    color: #6B7280;
+    font-size: 0.95rem;
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+
+.sm-error {
+    background: #FEE2E2;
+    color: #EF4444;
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+    font-weight: 500;
+}
+
+.sm-input-wrap {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.sm-input-wrap .rupee-sym {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.5rem;
+    color: #374151;
+    font-weight: 600;
+}
+
+.sm-input-wrap input {
+    width: 100%;
+    padding: 16px 20px 16px 45px;
+    border: 2px solid #E5E7EB;
+    border-radius: 16px;
+    font-size: 1.25rem;
+    font-family: 'Poppins', sans-serif;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.sm-input-wrap input:focus {
+    border-color: #7C83FF;
+    box-shadow: 0 0 0 4px rgba(124, 131, 255, 0.1);
+}
+
+.sm-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #7C83FF 0%, #A78BFA 100%);
+    color: white;
+    border: none;
+    padding: 16px;
+    border-radius: 16px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    font-family: 'Outfit', sans-serif;
+}
+
+.sm-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(124, 131, 255, 0.3);
+}
+
+.sm-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.sm-sub {
+    color: #9CA3AF;
+    font-size: 0.8rem;
+    margin-top: 12px;
+}

@@ -1,0 +1,265 @@
+/* ================================================================
+   INSURANCE DASHBOARD PAGE CSS
+   Theme: High-end Pastel with Soft Shadows & Clean Spacing
+   ================================================================ */
+
+.insurance-page {
+    padding: 32px;
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+/* -- Insights Banner -- */
+.ins-insights-banner {
+    background: #F0FDF4; /* Very light success green */
+    border: 2px solid #DCFCE7;
+    border-radius: var(--radius-xl);
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.05);
+}
+
+.ins-insights-banner::after {
+    content: '🛡️';
+    position: absolute;
+    top: -20px;
+    right: -20px;
+    font-size: 10rem;
+    opacity: 0.06;
+    pointer-events: none;
+}
+
+.ins-banner-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 40px;
+    position: relative;
+    z-index: 2;
+}
+
+.ins-banner-main {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex: 1;
+}
+
+.ins-banner-emoji {
+    font-size: 3rem;
+}
+
+.ins-banner-main h3 {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #166534;
+    margin-bottom: 4px;
+}
+
+.ins-banner-main p {
+    font-size: 0.95rem;
+    color: #15803D;
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+.ins-banner-picks {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.ins-pick-item {
+    background: white;
+    padding: 10px 18px;
+    border-radius: 16px;
+    border: 1px solid #DCFCE7;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #166534;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    white-space: nowrap;
+}
+
+/* -- Grid Container -- */
+.ins-grid-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.ins-grid-header h2 {
+    font-size: 1.7rem;
+    font-weight: 850;
+    color: var(--text-dark);
+    margin-bottom: 4px;
+    letter-spacing: -0.5px;
+}
+
+.ins-grid-header p {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    font-weight: 500;
+}
+
+.ins-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 24px;
+}
+
+/* -- Card Styling -- */
+.ins-card {
+    background: white;
+    border: 1.5px solid #F1F0F5;
+    border-radius: var(--radius-xl);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(124, 131, 255, 0.04);
+}
+
+.ins-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--primary-light);
+    box-shadow: 0 12px 30px rgba(124, 131, 255, 0.08);
+}
+
+.ins-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.ins-name-wrap {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.ins-plan-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    font-weight: 800;
+}
+
+.ins-plan-info h4 {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin-bottom: 2px;
+}
+
+.ins-plan-best {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-light);
+}
+
+.ins-price-wrap {
+    text-align: right;
+}
+
+.ins-price-val {
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: var(--text-dark);
+}
+
+.ins-price-unit {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    font-weight: 700;
+}
+
+/* -- Grid Footer -- */
+.ins-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1.5px solid #F1F0F5;
+    padding-top: 18px;
+}
+
+.ins-footer-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ins-csr-badge {
+    background: #DCFCE7; /* Success green */
+    color: #166534;
+    padding: 6px 14px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+
+.ins-csr-label {
+    opacity: 0.6;
+    font-weight: 700;
+    margin-left: 2px;
+}
+
+.ins-tag {
+    padding: 6px 14px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.ins-action-btn {
+    background: var(--primary-soft);
+    color: var(--primary);
+    border: none;
+    padding: 10px 22px;
+    border-radius: 14px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ins-action-btn:hover {
+    background: var(--primary);
+    color: white;
+    transform: scale(1.05);
+}
+
+/* -- Responsive -- */
+@media (max-width: 1000px) {
+    .ins-banner-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 24px;
+    }
+
+    .ins-pick-item {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 768px) {
+    .ins-grid {
+        grid-template-columns: 1fr;
+    }
+}

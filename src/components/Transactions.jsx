@@ -42,6 +42,7 @@ export default function Transactions({ limit = 5 }) {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
+        let channel;
         const fetchTransactions = async () => {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) return
@@ -55,19 +56,28 @@ export default function Transactions({ limit = 5 }) {
 
             if (data) setTransactions(data)
             setLoading(false)
+
+            // Listen for real-time inserts to update instantly
+            channel = supabase
+                .channel(`public:transactions:${user.id}`)
+                .on('postgres_changes', { 
+                    event: 'INSERT', 
+                    schema: 'public', 
+                    table: 'transactions',
+                    filter: `user_id=eq.${user.id}`
+                }, payload => {
+                    setTransactions(current => [payload.new, ...current].slice(0, limit))
+                })
+                .subscribe()
         }
 
         fetchTransactions()
 
-        // Listen for real-time inserts to update instantly
-        const channel = supabase
-            .channel('public:transactions')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'transactions' }, payload => {
-                setTransactions(current => [payload.new, ...current].slice(0, limit))
-            })
-            .subscribe()
-
-        return () => supabase.removeChannel(channel)
+        return () => {
+            if (channel) {
+                supabase.removeChannel(channel)
+            }
+        }
     }, [limit])
 
     if (loading) {

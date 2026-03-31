@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react'
+import { supabase } from '../supabaseClient'
 import './AddExpense.css'
 
 const categories = [
-    { id: 'food', emoji: '🍔', name: 'Food', hint: 'Looks like a food expense 🍔' },
-    { id: 'transport', emoji: '🚗', name: 'Transport', hint: 'Travel expense detected 🚗' },
-    { id: 'shopping', emoji: '🛒', name: 'Shopping', hint: 'Retail therapy! 🛍️' },
-    { id: 'bills', emoji: '⚡', name: 'Bills', hint: 'Utility bill noted ⚡' },
-    { id: 'entertainment', emoji: '🎬', name: 'Movies', hint: 'Enjoy the show! 🎬' },
-    { id: 'health', emoji: '💊', name: 'Health', hint: 'Health comes first 💊' },
-    { id: 'education', emoji: '📚', name: 'Education', hint: 'Investing in yourself 📚' },
-    { id: 'other', emoji: '📦', name: 'Other', hint: 'Miscellaneous expense 📦' },
+    { id: 'Food & Dining', emoji: '🍔', name: 'Food', hint: 'Looks like a food expense 🍔' },
+    { id: 'Transport', emoji: '🚗', name: 'Transport', hint: 'Travel expense detected 🚗' },
+    { id: 'Shopping', emoji: '🛒', name: 'Shopping', hint: 'Retail therapy! 🛍️' },
+    { id: 'Bills', emoji: '⚡', name: 'Bills', hint: 'Utility bill noted ⚡' },
+    { id: 'Entertainment', emoji: '🎬', name: 'Movies', hint: 'Enjoy the show! 🎬' },
+    { id: 'Health', emoji: '💊', name: 'Health', hint: 'Health comes first 💊' },
+    { id: 'Education', emoji: '📚', name: 'Education', hint: 'Investing in yourself 📚' },
+    { id: 'Others', emoji: '📦', name: 'Other', hint: 'Miscellaneous expense 📦' },
 ]
 
 const quickAmounts = [100, 500, 1000, 2000, 5000]
@@ -22,6 +23,8 @@ export default function AddExpense({ isOpen, onClose }) {
         return d.toISOString().split('T')[0]
     })
     const [notes, setNotes] = useState('')
+    const [loading, setLoading] = useState(false)
+    const [errorMsg, setErrorMsg] = useState('')
 
     // Reset form when modal opens
     useEffect(() => {
@@ -30,31 +33,96 @@ export default function AddExpense({ isOpen, onClose }) {
             setSelectedCat(null)
             setDate(new Date().toISOString().split('T')[0])
             setNotes('')
+            setErrorMsg('')
         }
     }, [isOpen])
 
     // Close on Esc key
     useEffect(() => {
-        const handler = (e) => { if (e.key === 'Escape') onClose() }
+        const handler = (e) => { if (e.key === 'Escape' && !loading) onClose() }
         if (isOpen) window.addEventListener('keydown', handler)
         return () => window.removeEventListener('keydown', handler)
-    }, [isOpen, onClose])
+    }, [isOpen, onClose, loading])
 
     if (!isOpen) return null
 
     const activeCat = categories.find(c => c.id === selectedCat)
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault()
-        // In production, this would save the expense
-        onClose()
+        setErrorMsg('')
+        
+        if (!amount || Number(amount) <= 0) {
+            setErrorMsg('Please enter a valid amount')
+            return
+        }
+        if (!selectedCat) {
+            setErrorMsg('Please select a category')
+            return
+        }
+
+        setLoading(true)
+        try {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) throw new Error("Not authenticated")
+
+            const expenseAmt = Number(amount)
+
+            // 1. Deduct from Balance
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('balance')
+                .eq('id', user.id)
+                .single()
+            
+            if (profile) {
+                const { error: balErr } = await supabase
+                    .from('profiles')
+                    .update({ balance: Number(profile.balance) - expenseAmt })
+                    .eq('id', user.id)
+                if (balErr) throw balErr
+            }
+
+            // 2. Insert Transaction (unified category mapping for Budget module)
+            let isoDate = new Date().toISOString();
+            if (date) {
+                // Parse local date from input YYYY-MM-DD
+                const [y, m, d] = date.split('-');
+                if (y && m && d) {
+                    isoDate = new Date(y, m - 1, d, 12, 0, 0).toISOString();
+                }
+            }
+
+            const { error: txErr } = await supabase
+                .from('transactions')
+                .insert([{
+                    user_id: user.id,
+                    amount: expenseAmt,
+                    type: 'expense',
+                    category: selectedCat,
+                    description: notes.trim() || activeCat.name,
+                    created_at: isoDate
+                }])
+            
+            if (txErr) {
+                // Ignore rollback failure for ui simplicity, log it
+                console.error("Failed to add tx", txErr)
+                throw txErr
+            }
+
+            onClose()
+        } catch (err) {
+            console.error("Expense Add Error:", err)
+            setErrorMsg(err.message || 'Failed to add expense')
+        }
+        setLoading(false)
     }
 
     return (
-        <div className="modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+        <div className="modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget && !loading) onClose() }}>
             <div className="expense-modal">
                 {/* Close */}
-                <button className="modal-close" onClick={onClose} aria-label="Close">
+                <button className="modal-close" onClick={() => !loading && onClose()} aria-label="Close">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18" />
                         <line x1="6" y1="6" x2="18" y2="18" />
@@ -67,6 +135,8 @@ export default function AddExpense({ isOpen, onClose }) {
                     <h2>Add Expense</h2>
                     <p>Track your spending easily</p>
                 </div>
+
+                {errorMsg && <div style={{ color: '#F43F5E', background: '#FFF5F7', padding: '10px', borderRadius: '8px', textAlign: 'center', marginBottom: '16px', fontWeight: '500', fontSize: '0.9rem' }}>{errorMsg}</div>}
 
                 <form onSubmit={handleSubmit}>
                     {/* Amount */}
@@ -100,7 +170,7 @@ export default function AddExpense({ isOpen, onClose }) {
 
                     {/* Category */}
                     <div className="form-section">
-                        <span className="form-section-label">Category</span>
+                        <span className="form-section-label">Category (Syncs with Budget)</span>
                         <div className="category-grid">
                             {categories.map(cat => (
                                 <div
@@ -151,11 +221,15 @@ export default function AddExpense({ isOpen, onClose }) {
                     </div>
 
                     {/* Submit */}
-                    <button type="submit" className="expense-submit-btn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                        Add Expense
+                    <button type="submit" className="expense-submit-btn" disabled={loading}>
+                        {loading ? 'Saving...' : (
+                            <>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                                Add Expense
+                            </>
+                        )}
                     </button>
                 </form>
             </div>
